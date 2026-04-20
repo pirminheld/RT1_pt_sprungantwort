@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interaktive P-Regelstrecke</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --primary: #163a63;
+      --primary-light: #2f5f96;
+      --accent: #d9e6f5;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #d8e0ea;
+      --shadow: 0 10px 30px rgba(0,0,0,0.08);
+      --radius: 18px;
+      --good: #0f766e;
+      --warn: #92400e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #eef3f9 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    header {
+      position: relative;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 24px 20px 18px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+      min-height: 70px;
+    }
+
+    .qr {
+      position: absolute;
+      right: 110px;
+      top: 0;
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      padding: 4px;
+    }
+
+    .logo {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 96px;
+      height: 72px;
+      object-fit: contain;
+    }
+
+    .title-wrap {
+      margin: 0 210px 0 20px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      color: var(--primary);
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 28px auto;
+      padding: 0 18px 30px;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 22px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: var(--primary);
+      font-size: 1.35rem;
+    }
+
+    h3 {
+      color: var(--primary-light);
+      margin-bottom: 8px;
+      margin-top: 22px;
+      font-size: 1.05rem;
+    }
+
+    p {
+      line-height: 1.5;
+    }
+
+    .equation {
+      background: #f8fbff;
+      border: 1px solid var(--border);
+      border-left: 6px solid var(--primary-light);
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 1.02rem;
+      margin: 14px 0;
+    }
+
+    .control-group {
+      margin-bottom: 18px;
+      padding: 14px;
+      background: #f8fbff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .value {
+      color: var(--primary-light);
+      min-width: 86px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-top: 6px;
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .result-box {
+      background: #f8fbff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .result-box strong {
+      display: block;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+
+    .result-big {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: var(--good);
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .canvas-wrap {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      background: #fbfdff;
+    }
+
+    canvas {
+      width: 100%;
+      height: 280px;
+      display: block;
+      background: white;
+      border-radius: 12px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 14px;
+      height: 4px;
+      border-radius: 4px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .legend .in::before {
+      background: #1d4ed8;
+    }
+
+    .legend .out::before {
+      background: #059669;
+    }
+
+    .legend .axis::before {
+      background: #9ca3af;
+    }
+
+    .hint {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 14px;
+      background: #fff9ed;
+      border: 1px solid #f5d7a1;
+      color: var(--warn);
+    }
+
+    footer {
+      max-width: 1200px;
+      margin: 0 auto 24px;
+      padding: 0 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    footer a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    @media (max-width: 980px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .title-wrap {
+        margin: 90px 0 0 0;
+      }
+
+      .qr {
+        left: 50%;
+        right: auto;
+        transform: translateX(-120px);
+      }
+
+      .logo {
+        left: 50%;
+        transform: translateX(40px);
+        right: auto;
+      }
+
+      .results {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <img src="QRCode.png" alt="QR-Code" class="qr" onerror="this.style.display='none'">
+      <img src="FTS_logo.png" alt="FTS Logo" class="logo" onerror="this.style.display='none'">
+      <div class="title-wrap">
+        <h1>Interaktive P-Regelstrecke</h1>
+        <div class="subtitle">Flüssigkeitsströmung in einer Rohrleitung – Eingangssprung und Sprungantwort</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Parameter einstellen</h2>
+      <p>
+        Bei einer <strong>P-Regelstrecke</strong> ändert sich der Ausgang <strong>sofort proportional</strong> zum Eingang.
+        In diesem Beispiel ist die Schieberstellung <strong>h</strong> der Eingang und der Durchfluss <strong>q</strong> der Ausgang.
+      </p>
+
+      <div class="equation">
+        Gegeben: Δh = 20 mm und Δq = 0,1 m³/s<br>
+        Daraus folgt: <strong>K<sub>PS</sub> = Δq / Δh = 0,005 (m³/s)/mm</strong>
+      </div>
+
+      <div class="control-group">
+        <label for="h1">
+          <span>Schieberstellung ab t = 0 min</span>
+          <span class="value" id="h1Value">15 mm</span>
+        </label>
+        <input id="h1" type="range" min="0" max="20" step="1" value="15">
+        <div class="small">Das ist der erste Eingangssprung.</div>
+      </div>
+
+      <div class="control-group">
+        <label for="switchTime">
+          <span>Zeitpunkt der zweiten Änderung</span>
+          <span class="value" id="switchTimeValue">3,0 min</span>
+        </label>
+        <input id="switchTime" type="range" min="1" max="9" step="0.5" value="3">
+        <div class="small">Ab diesem Zeitpunkt wird die Schieberstellung erneut geändert.</div>
+      </div>
+
+      <div class="control-group">
+        <label for="deltaH">
+          <span>Änderung der Schieberstellung bei t = t₁</span>
+          <span class="value" id="deltaHValue">-5 mm</span>
+        </label>
+        <input id="deltaH" type="range" min="-15" max="15" step="1" value="-5">
+        <div class="small">Negative Werte: Schieber wird geschlossen. Positive Werte: Schieber wird weiter geöffnet.</div>
+      </div>
+
+      <div class="control-group">
+        <label for="tEnd">
+          <span>Darstellungsdauer</span>
+          <span class="value" id="tEndValue">10 min</span>
+        </label>
+        <input id="tEnd" type="range" min="5" max="20" step="1" value="10">
+        <div class="small">Gesamte Zeitachse der Diagramme.</div>
+      </div>
+
+      <div class="results">
+        <div class="result-box">
+          <strong>Übertragungsbeiwert</strong>
+          <div class="result-big">K<sub>PS</sub> = 0,005</div>
+          <div>(m³/s) / mm</div>
+        </div>
+        <div class="result-box">
+          <strong>Gleichung</strong>
+          <div class="result-big">q(t) = K<sub>PS</sub> · h(t)</div>
+          <div>mit K<sub>PS</sub> = 0,005</div>
+        </div>
+        <div class="result-box">
+          <strong>Durchfluss im 1. Abschnitt</strong>
+          <div class="result-big" id="q1Box">0,075 m³/s</div>
+          <div>für 0 ≤ t &lt; t₁</div>
+        </div>
+        <div class="result-box">
+          <strong>Durchfluss im 2. Abschnitt</strong>
+          <div class="result-big" id="q2Box">0,050 m³/s</div>
+          <div>für t ≥ t₁</div>
+        </div>
+      </div>
+
+      <div class="hint" id="stateInfo">
+        Der Schieber wird zunächst auf 15 mm geöffnet. Nach 3,0 min wird er um 5 mm geschlossen. Dadurch fällt der Durchfluss sprunghaft von 0,075 m³/s auf 0,050 m³/s.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Grafische Darstellung</h2>
+      <div class="diagram-grid">
+        <div class="canvas-wrap">
+          <h3>Eingangssprung: Schieberstellung h(t)</h3>
+          <canvas id="inputCanvas" width="760" height="280"></canvas>
+          <div class="legend">
+            <span class="in">Eingang h(t)</span>
+            <span class="axis">Achsen / Raster</span>
+          </div>
+        </div>
+
+        <div class="canvas-wrap">
+          <h3>Sprungantwort: Durchfluss q(t)</h3>
+          <canvas id="outputCanvas" width="760" height="280"></canvas>
+          <div class="legend">
+            <span class="out">Ausgang q(t)</span>
+            <span class="axis">Achsen / Raster</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a href="impressum.html">Impressum</a>
+  </footer>
+
+  <script>
+    const KPS = 0.005;
+
+    const h1Slider = document.getElementById('h1');
+    const switchTimeSlider = document.getElementById('switchTime');
+    const deltaHSlider = document.getElementById('deltaH');
+    const tEndSlider = document.getElementById('tEnd');
+
+    const h1Value = document.getElementById('h1Value');
+    const switchTimeValue = document.getElementById('switchTimeValue');
+    const deltaHValue = document.getElementById('deltaHValue');
+    const tEndValue = document.getElementById('tEndValue');
+
+    const q1Box = document.getElementById('q1Box');
+    const q2Box = document.getElementById('q2Box');
+    const stateInfo = document.getElementById('stateInfo');
+
+    const inputCanvas = document.getElementById('inputCanvas');
+    const outputCanvas = document.getElementById('outputCanvas');
+    const ctxIn = inputCanvas.getContext('2d');
+    const ctxOut = outputCanvas.getContext('2d');
+
+    function formatNumber(value, decimals = 3) {
+      return value.toFixed(decimals).replace('.', ',');
+    }
+
+    function getState() {
+      const h1 = Number(h1Slider.value);
+      const t1 = Number(switchTimeSlider.value);
+      const deltaH = Number(deltaHSlider.value);
+      const tEnd = Number(tEndSlider.value);
+      const h2 = Math.max(0, h1 + deltaH);
+      const q1 = KPS * h1;
+      const q2 = KPS * h2;
+      return { h1, t1, deltaH, tEnd, h2, q1, q2 };
+    }
+
+    function updateTexts() {
+      const s = getState();
+      h1Value.textContent = `${s.h1} mm`;
+      switchTimeValue.textContent = `${formatNumber(s.t1, 1)} min`;
+      deltaHValue.textContent = `${s.deltaH > 0 ? '+' : ''}${s.deltaH} mm`;
+      tEndValue.textContent = `${s.tEnd} min`;
+      q1Box.textContent = `${formatNumber(s.q1, 3)} m³/s`;
+      q2Box.textContent = `${formatNumber(s.q2, 3)} m³/s`;
+
+      const action = s.deltaH < 0
+        ? `um ${Math.abs(s.deltaH)} mm geschlossen`
+        : s.deltaH > 0
+          ? `um ${s.deltaH} mm weiter geöffnet`
+          : 'nicht weiter verändert';
+
+      stateInfo.textContent = `Der Schieber wird zunächst auf ${s.h1} mm geöffnet. Nach ${formatNumber(s.t1, 1)} min wird er ${action}. Dadurch ändert sich der Durchfluss sprunghaft von ${formatNumber(s.q1, 3)} m³/s auf ${formatNumber(s.q2, 3)} m³/s.`;
+    }
+
+    function drawAxes(ctx, width, height, xMax, yMax, yUnit, yTicks) {
+      const pad = { left: 62, right: 20, top: 18, bottom: 42 };
+      const w = width - pad.left - pad.right;
+      const h = height - pad.top - pad.bottom;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i <= 10; i++) {
+        const x = pad.left + (w / 10) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, pad.top);
+        ctx.lineTo(x, pad.top + h);
+        ctx.stroke();
+      }
+
+      for (let i = 0; i <= yTicks; i++) {
+        const y = pad.top + (h / yTicks) * i;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + w, y);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = '#6b7280';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top);
+      ctx.lineTo(pad.left, pad.top + h);
+      ctx.lineTo(pad.left + w, pad.top + h);
+      ctx.stroke();
+
+      ctx.fillStyle = '#374151';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('t [min]', pad.left + w / 2, height - 10);
+
+      ctx.save();
+      ctx.translate(18, pad.top + h / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = 'center';
+      ctx.fillText(yUnit, 0, 0);
+      ctx.restore();
+
+      ctx.textAlign = 'center';
+      for (let i = 0; i <= 10; i++) {
+        const value = (xMax / 10) * i;
+        const x = pad.left + (w / 10) * i;
+        ctx.fillText(formatNumber(value, xMax <= 10 ? 1 : 0), x, pad.top + h + 22);
+      }
+
+      ctx.textAlign = 'right';
+      for (let i = 0; i <= yTicks; i++) {
+        const value = yMax - (yMax / yTicks) * i;
+        const y = pad.top + (h / yTicks) * i + 5;
+        const decimals = yMax < 1 ? 3 : 0;
+        ctx.fillText(formatNumber(value, decimals), pad.left - 10, y);
+      }
+
+      return {
+        pad,
+        w,
+        h,
+        xToPx: x => pad.left + (x / xMax) * w,
+        yToPx: y => pad.top + h - (y / yMax) * h
+      };
+    }
+
+    function drawStepCurve(ctx, map, points, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(map.xToPx(points[0].x), map.yToPx(points[0].y));
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(map.xToPx(points[i].x), map.yToPx(points[i].y));
+      }
+      ctx.stroke();
+
+      ctx.fillStyle = color;
+      points.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(map.xToPx(p.x), map.yToPx(p.y), 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawInput() {
+      const s = getState();
+      const yMax = Math.max(20, s.h1, s.h2) + 2;
+      const map = drawAxes(ctxIn, inputCanvas.width, inputCanvas.height, s.tEnd, yMax, 'h [mm]', 6);
+
+      const pts = [
+        { x: 0, y: 0 },
+        { x: 0, y: s.h1 },
+        { x: s.t1, y: s.h1 },
+        { x: s.t1, y: s.h2 },
+        { x: s.tEnd, y: s.h2 }
+      ];
+      drawStepCurve(ctxIn, map, pts, '#1d4ed8');
+
+      drawMarker(ctxIn, map, s.t1, `t₁ = ${formatNumber(s.t1, 1)} min`);
+    }
+
+    function drawOutput() {
+      const s = getState();
+      const yMax = Math.max(0.12, s.q1, s.q2) * 1.15;
+      const map = drawAxes(ctxOut, outputCanvas.width, outputCanvas.height, s.tEnd, yMax, 'q [m³/s]', 6);
+
+      const pts = [
+        { x: 0, y: 0 },
+        { x: 0, y: s.q1 },
+        { x: s.t1, y: s.q1 },
+        { x: s.t1, y: s.q2 },
+        { x: s.tEnd, y: s.q2 }
+      ];
+      drawStepCurve(ctxOut, map, pts, '#059669');
+
+      drawMarker(ctxOut, map, s.t1, `t₁ = ${formatNumber(s.t1, 1)} min`);
+    }
+
+    function drawMarker(ctx, map, x, label) {
+      const px = map.xToPx(x);
+      ctx.strokeStyle = '#9ca3af';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.moveTo(px, map.pad.top);
+      ctx.lineTo(px, map.pad.top + map.h);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#4b5563';
+      ctx.font = '13px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, Math.min(px + 8, map.pad.left + map.w - 80), map.pad.top + 18);
+    }
+
+    function render() {
+      updateTexts();
+      drawInput();
+      drawOutput();
+    }
+
+    [h1Slider, switchTimeSlider, deltaHSlider, tEndSlider].forEach(el => {
+      el.addEventListener('input', render);
+    });
+
+    render();
+  </script>
+</body>
+</html>
